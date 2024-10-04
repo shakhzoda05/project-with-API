@@ -1,7 +1,7 @@
 import axios from 'axios'
 import React, { useEffect, useState } from 'react'
 import ProductsItem from '../components/ProductsItem'
-import { Empty, Input } from 'antd'
+import { Empty, Input, Select } from 'antd'
 import { LoadingOutlined } from '@ant-design/icons'
 import useDebounce from '../hook/useDebounce'
 
@@ -18,19 +18,53 @@ function Home() {
     }
     const searchWaiting=useDebounce(searchValue,800)
 
+// Select change start
+const [categoryData,setCategoryData]=useState([])
+const [categoryId,setCategoryId]=useState(null)
+const onChange = (value)=> {
+    setIsLoading(true)
+    setTimeout(()=>setCategoryId(value),1000)
+};
+
+
 useEffect(()=>{
-    axios.get(`https://api.escuelajs.co/api/v1/products/?title=${searchWaiting}&offset=0&limit=20`).then(res=>{
+    axios.get("https://api.escuelajs.co/api/v1/categories").then(res=>{
+        setCategoryData(res.data.map(item=>{
+            const data={
+                value:item.id,
+                label:item.name
+            }
+            return data
+        }))
+    })
+},[])
+// Select change end
+
+
+useEffect(()=>{
+    axios.get(`https://api.escuelajs.co/api/v1/products/?title=${searchWaiting}&offset=0&limit=20`,{
+       params:{
+        categoryId:categoryId
+       } 
+    }).then(res=>{
         setProducts(res.data)
         setIsLoading(false)
     })
-},[searchWaiting])
+},[searchWaiting,categoryId])
 
 
 
   return (
     <div className='p-10'>
-        <div className='mb-5'>
+        <div className='mb-5 flex justify-between'>
        <Input onChange={handleProductsSearch} size='large' allowClear className='w-[350px]' name='searching' placeholder='Search products...'/>
+       <Select size='large' className='w-[250px]'
+    showSearch
+    placeholder="Choose cateory"
+    optionFilterProp="label"
+    onChange={onChange}
+    options={categoryData}
+  />
         </div>
     <ul className="flex justify-between flex-wrap gap-5">
         {isLoading 
